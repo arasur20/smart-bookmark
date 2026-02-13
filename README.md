@@ -153,7 +153,3 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 The app is deployed on **Vercel**.
 
 ---
-
-## 👨‍💻 Author
-
-Smart Bookmark – Assignment Project
