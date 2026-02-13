@@ -1,36 +1,159 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Bookmark App
 
-## Getting Started
+## 🚀 Project Overview
 
-First, run the development server:
+Smart Bookmark is a realtime bookmark management app built with **Next.js (App Router)** and **Supabase**.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Users can:
+
+* Sign in using Google OAuth
+* Add and delete bookmarks
+* See realtime updates across multiple tabs
+* Access only their own bookmarks (secured with RLS)
+
+---
+
+## 🧰 Tech Stack
+
+* **Frontend:** Next.js (App Router)
+* **Styling:** Tailwind CSS
+* **Backend & Database:** Supabase (PostgreSQL)
+* **Authentication:** Google OAuth (Supabase Auth)
+* **Realtime:** Supabase Realtime
+* **Deployment:** Vercel
+
+---
+
+## ✨ Features
+
+* Google OAuth login (Signup + Login handled automatically)
+* Private bookmarks per user
+* Add / Delete bookmarks
+* Realtime sync across tabs
+* URL validation
+* Loading indicator while fetching data
+* Logout functionality
+
+---
+
+## 🧱 Database Schema
+
+```sql
+create table bookmarks (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users not null,
+  title text not null,
+  url text not null,
+  created_at timestamp default now()
+);
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 Row Level Security (RLS)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+RLS ensures users can only access their own data.
 
-## Learn More
+```sql
+alter table bookmarks enable row level security;
+```
 
-To learn more about Next.js, take a look at the following resources:
+Policies:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sql
+create policy "select own bookmarks"
+on bookmarks for select
+using (auth.uid() = user_id);
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+create policy "insert own bookmarks"
+on bookmarks for insert
+with check (auth.uid() = user_id);
 
-## Deploy on Vercel
+create policy "delete own bookmarks"
+on bookmarks for delete
+using (auth.uid() = user_id);
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚡ Problems Faced & Solutions
+
+### 1️⃣ Google OAuth redirect error
+
+**Problem:** `redirect_uri_mismatch`
+
+**Solution:**
+
+* Added Supabase callback URL in Google Cloud Console:
+
+```
+https://PROJECT_ID.supabase.co/auth/v1/callback
+```
+
+---
+
+### 2️⃣ Insert blocked (403 Forbidden)
+
+**Problem:** RLS prevented inserting bookmarks.
+
+**Solution:**
+
+* Added `user_id: user.id` while inserting bookmarks.
+
+---
+
+### 3️⃣ Realtime delete not syncing across tabs
+
+**Problem:** DELETE events were not updating other tabs.
+
+**Solution:**
+
+* Enabled replication:
+
+```sql
+ALTER TABLE bookmarks REPLICA IDENTITY FULL;
+```
+
+* Refetched bookmarks on realtime change events.
+
+---
+
+### 4️⃣ Inconsistent bookmark ordering
+
+**Problem:** New bookmarks appeared at bottom in some tabs.
+
+**Solution:**
+
+* Added ordering:
+
+```ts
+.order("created_at", { ascending: false })
+```
+
+---
+
+## 🧪 Local Setup
+
+```bash
+npm install
+npm run dev
+```
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+```
+
+---
+
+## 🌐 Deployment
+
+The app is deployed on **Vercel**.
+
+---
+
+## 👨‍💻 Author
+
+Smart Bookmark – Assignment Project
