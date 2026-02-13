@@ -1,13 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  // ✅ Auto redirect if already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.replace("/bookmarks");
+      }
+    };
+
+    checkUser();
+  }, []);
+
   const signIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${location.origin}/bookmarks`,
+        redirectTo: `${window.location.origin}/bookmarks`,
         queryParams: {
           prompt: "select_account",
         },
